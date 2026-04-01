@@ -364,7 +364,8 @@ export default function DashboardPage() {
       <nav className="navbar">
         <h1>Series Tracker</h1>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Link href="/stats" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 20 }}>Estadísticas</Link>
+          <Link href="/history" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 15 }}>Historial</Link>
+          <Link href="/stats" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 15 }}>Estadísticas</Link>
           <button onClick={handleLogout}>Cerrar sesión</button>
           <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Cambiar tema">
             {theme === 'dark' ? '☀️' : '🌙'}
