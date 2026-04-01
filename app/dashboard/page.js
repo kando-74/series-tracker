@@ -443,8 +443,8 @@ export default function DashboardPage() {
               {searchQuery && ` que coinciden con "${searchQuery}"`}
             </p>
             <div className="series-grid">
-              {filteredSeries.map((s) => (
-                <div key={s.id} className="series-card">
+              {filteredSeries.map((s, i) => (
+                <div key={s.id} className="series-card stagger-item hover-scale" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
                   <div style={{ position: 'relative' }}>
                     {s.image_url ? (
                       <img src={s.image_url} alt={s.title} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 8, marginBottom: 10 }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
