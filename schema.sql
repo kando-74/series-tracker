@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS series (
   user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   image_url TEXT,
+  tvmaze_id TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

@@ -261,6 +261,8 @@ export default function SerieDetailPage() {
   const [addingSeason, setAddingSeason] = useState(false)
   const [editingSeason, setEditingSeason] = useState(null)
   const [hoveredChapter, setHoveredChapter] = useState(null)
+  const [showDetails, setShowDetails] = useState(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
@@ -377,8 +379,31 @@ export default function SerieDetailPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
           <a href="/dashboard" className="back-btn" style={{ margin: 0 }}>← Volver</a>
           <h1>{serie?.title || 'Cargando...'}</h1>
+          {serie?.tvmaze_id && (
+            <button onClick={() => { if (!showDetails) fetchShowDetails(serie.tvmaze_id); else setShowDetails(null) }} style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
+              {detailsLoading ? '...' : showDetails ? '✕ Info' : 'ℹ Info'}
+            </button>
+          )}
         </div>
       </nav>
+
+      {showDetails && (
+        <div className="container" style={{ marginTop: 0 }}>
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: 20, marginBottom: 20, border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: showDetails.summary ? 15 : 0 }}>
+              {showDetails.genres?.map(g => <span key={g} style={{ background: 'var(--accent)', color: '#fff', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem' }}>{g}</span>)}
+              {showDetails.runtime && <span style={{ color: '#888', fontSize: '0.85rem', alignSelf: 'center' }}>{showDetails.runtime} min</span>}
+              <span style={{ color: showDetails.status === 'Ended' ? '#e53935' : '#4caf50', fontSize: '0.85rem', alignSelf: 'center' }}>{showDetails.status}</span>
+            </div>
+            {showDetails.summary && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>{showDetails.summary}</p>}
+            <div style={{ display: 'flex', gap: 15, marginTop: 15, flexWrap: 'wrap' }}>
+              {showDetails.premiered && <span style={{ color: '#888', fontSize: '0.85rem' }}>📅 {showDetails.premiered}{showDetails.ended ? ` - ${showDetails.ended}` : ''}</span>}
+              {showDetails.imdb && <a href={`https://www.imdb.com/title/${showDetails.imdb}`} target="_blank" style={{ color: '#f5c518', fontSize: '0.85rem' }}>🎬 IMDB</a>}
+              {showDetails.trailer && <a href={showDetails.trailer} target="_blank" style={{ color: '#e53935', fontSize: '0.85rem' }}>▶ Trailer</a>}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="container">
         {loading ? (

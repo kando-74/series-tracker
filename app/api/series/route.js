@@ -36,12 +36,12 @@ export async function POST(request) {
     const payload = await getUserFromCookies()
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     
-    const { title, image_url } = await request.json()
+    const { title, image_url, tvmaze_id } = await request.json()
     if (!title) return NextResponse.json({ error: 'Title required' }, { status: 400 })
     
     const db = getDb()
-    const result = db.prepare('INSERT INTO series (user_id, title, image_url) VALUES (?, ?, ?)').run(
-      payload.userId, title, image_url || null
+    const result = db.prepare('INSERT INTO series (user_id, title, image_url, tvmaze_id) VALUES (?, ?, ?, ?)').run(
+      payload.userId, title, image_url || null, tvmaze_id || null
     )
     
     return NextResponse.json({ 
@@ -58,12 +58,12 @@ export async function PUT(request) {
     const payload = await getUserFromCookies()
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     
-    const { id, title, image_url } = await request.json()
+    const { id, title, image_url, tvmaze_id } = await request.json()
     if (!id || !title) return NextResponse.json({ error: 'ID and title required' }, { status: 400 })
     
     const db = getDb()
-    db.prepare('UPDATE series SET title = ?, image_url = ? WHERE id = ? AND user_id = ?').run(
-      title, image_url || null, id, payload.userId
+    db.prepare('UPDATE series SET title = ?, image_url = ?, tvmaze_id = ? WHERE id = ? AND user_id = ?').run(
+      title, image_url || null, tvmaze_id || null, id, payload.userId
     )
     
     return NextResponse.json({ success: true })
