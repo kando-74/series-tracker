@@ -13,7 +13,12 @@ export async function GET() {
         (SELECT COUNT(*) FROM seasons WHERE series_id = s.id) as season_count,
         (SELECT COUNT(*) FROM chapters c JOIN seasons se ON c.season_id = se.id WHERE se.series_id = s.id) as chapter_count,
         (SELECT COUNT(*) FROM chapters c JOIN seasons se ON c.season_id = se.id WHERE se.series_id = s.id AND c.seen = 1) as seen_count,
-        (SELECT AVG(c.rating) FROM chapters c JOIN seasons se ON c.season_id = se.id WHERE se.series_id = s.id AND c.seen = 1 AND c.rating IS NOT NULL) as avg_rating
+        (SELECT AVG(c.rating) FROM chapters c JOIN seasons se ON c.season_id = se.id WHERE se.series_id = s.id AND c.seen = 1 AND c.rating IS NOT NULL) as avg_rating,
+        (SELECT json_object('season', se.number, 'chapter', c.number, 'title', c.title)
+         FROM chapters c
+         JOIN seasons se ON c.season_id = se.id
+         WHERE se.series_id = s.id AND c.seen = 0
+         ORDER BY se.number, c.number LIMIT 1) as next_up
       FROM series s
       WHERE s.user_id = ?
       ORDER BY s.created_at DESC
