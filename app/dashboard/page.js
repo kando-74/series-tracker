@@ -447,7 +447,7 @@ export default function DashboardPage() {
                 <div key={s.id} className="series-card stagger-item hover-scale" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
                   <div style={{ position: 'relative' }}>
                     {s.image_url ? (
-                      <img src={s.image_url} alt={s.title} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 8, marginBottom: 10 }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+                      <img src={s.image_url} alt={s.title} loading="lazy" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 8, marginBottom: 10 }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
                     ) : null}
                     {!s.image_url && (
                       <div style={{ width: '100%', aspectRatio: '2/3', background: 'linear-gradient(135deg, #333 0%, #222 100%)', borderRadius: 8, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🎬</div>
