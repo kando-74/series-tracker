@@ -303,6 +303,7 @@ export default function DashboardPage() {
   const [toast, setToast] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('recent') // recent, name, progress
+  const [filterStatus, setFilterStatus] = useState('all') // all, watching, completed, pending
   const router = useRouter()
   
   const showToast = (message, type = 'success') => setToast({ message, type })
@@ -366,7 +367,14 @@ export default function DashboardPage() {
   
   // Filter and sort series
   const filteredSeries = series
-    .filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(s => {
+      const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase())
+      const pct = percentage(s.seen_count, s.chapter_count)
+      if (filterStatus === 'watching') return matchesSearch && pct > 0 && pct < 100
+      if (filterStatus === 'completed') return matchesSearch && pct === 100
+      if (filterStatus === 'pending') return matchesSearch && pct === 0
+      return matchesSearch
+    })
     .sort((a, b) => {
       if (sortBy === 'name') return a.title.localeCompare(b.title)
       if (sortBy === 'progress') return percentage(b.seen_count, b.chapter_count) - percentage(a.seen_count, a.chapter_count)
@@ -419,6 +427,16 @@ export default function DashboardPage() {
             <option value="recent">Más recientes</option>
             <option value="name">Por nombre</option>
             <option value="progress">Por progreso</option>
+          </select>
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            style={{ width: 'auto', marginBottom: 0, minWidth: 130 }}
+          >
+            <option value="all">Todas</option>
+            <option value="watching">En progreso</option>
+            <option value="completed">Terminadas</option>
+            <option value="pending">Por ver</option>
           </select>
         </div>
         
