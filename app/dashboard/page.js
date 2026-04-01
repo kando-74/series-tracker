@@ -330,6 +330,25 @@ export default function DashboardPage() {
     localStorage.setItem('theme', theme)
   }, [theme])
   
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // 'n' - New serie
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault()
+        setShowAddSerie(true)
+      }
+      // 'Escape' - Close modals
+      if (e.key === 'Escape') {
+        setShowAddSerie(false)
+        setAddingSeasonTo(null)
+        setEditingSerie(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+  
   const handleLogout = async () => {
     await fetch('/api/auth/me', { method: 'DELETE' })
     router.push('/login')
