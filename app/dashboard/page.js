@@ -300,6 +300,7 @@ export default function DashboardPage() {
   const [showAddSerie, setShowAddSerie] = useState(false)
   const [addingSeasonTo, setAddingSeasonTo] = useState(null)
   const [editingSerie, setEditingSerie] = useState(null)
+  const [editingSerieTitle, setEditingSerieTitle] = useState(null)
   const [toast, setToast] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('recent') // recent, name, progress
