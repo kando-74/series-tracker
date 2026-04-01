@@ -294,12 +294,14 @@ function AddSeasonModal({ seriesId, onClose, onAdd }) {
 }
 
 export default function DashboardPage() {
+  const [theme, setTheme] = useState('dark')
   const [series, setSeries] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddSerie, setShowAddSerie] = useState(false)
   const [addingSeasonTo, setAddingSeasonTo] = useState(null)
   const [editingSerie, setEditingSerie] = useState(null)
   const [toast, setToast] = useState(null)
+  const [theme, setTheme] = useState('dark')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('recent') // recent, name, progress
   const router = useRouter()
@@ -316,7 +318,18 @@ export default function DashboardPage() {
     finally { setLoading(false) }
   }
   
-  useEffect(() => { fetchSeries() }, [])
+  useEffect(() => {
+    fetchSeries()
+    // Load saved theme
+    const saved = localStorage.getItem('theme') || 'dark'
+    setTheme(saved)
+    document.documentElement.setAttribute('data-theme', saved)
+  }, [])
+  
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
   
   const handleLogout = async () => {
     await fetch('/api/auth/me', { method: 'DELETE' })
@@ -351,9 +364,12 @@ export default function DashboardPage() {
       
       <nav className="navbar">
         <h1>Series Tracker</h1>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <Link href="/stats" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 20 }}>Estadísticas</Link>
           <button onClick={handleLogout}>Cerrar sesión</button>
+          <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Cambiar tema">
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
         </div>
       </nav>
       
