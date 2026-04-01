@@ -261,6 +261,18 @@ export default function SerieDetailPage() {
     if (expandedSeason) fetchChapters(expandedSeason)
   }
 
+  const handleQuickToggleSeen = async (e, ch) => {
+    e.stopPropagation()
+    const newSeen = ch.seen ? 0 : 1
+    await fetch('/api/chapters', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: ch.id, seen: newSeen, seen_date: newSeen ? new Date().toISOString().split('T')[0] : null })
+    })
+    if (expandedSeason) fetchChapters(expandedSeason)
+    fetchSeasons()
+  }
+
   const handleMarkAllSeen = async (e, seasonId) => {
     e.stopPropagation()
     if (!confirm('¿Marcar todos los capítulos de esta temporada como vistos?')) return
@@ -375,7 +387,22 @@ export default function SerieDetailPage() {
                           <div className="chapter-number">Cap {ch.number}</div>
                           <div className="chapter-title" style={{ cursor: 'pointer' }} onClick={() => setEditingChapter(ch)}>{ch.title || `Capítulo ${ch.number}`}</div>
                           {ch.seen && ch.rating && <div className="chapter-rating">★ {ch.rating}</div>}
-                          {ch.seen && <div style={{ color: '#4caf50', fontSize: '0.85rem' }}>✓</div>}
+                          <button
+                            onClick={(e) => handleQuickToggleSeen(e, ch)}
+                            style={{
+                              background: ch.seen ? '#4caf50' : '#333',
+                              border: 'none',
+                              color: ch.seen ? '#fff' : '#888',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              padding: '4px 8px',
+                              borderRadius: 4,
+                              marginLeft: 5
+                            }}
+                            title={ch.seen ? 'Marcar como no visto' : 'Marcar como visto'}
+                          >
+                            {ch.seen ? '✓' : '○'}
+                          </button>
                           <button onClick={(e) => { e.stopPropagation(); setEditingChapter(ch) }} style={{ background: 'none', border: 'none', color: '#4a9eff', cursor: 'pointer', marginLeft: 5 }} title="Editar">✎</button>
                           <button onClick={(e) => handleDeleteChapter(e, ch.id)} style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', marginLeft: 5 }}>×</button>
                         </div>
