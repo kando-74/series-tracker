@@ -301,7 +301,6 @@ export default function DashboardPage() {
   const [addingSeasonTo, setAddingSeasonTo] = useState(null)
   const [editingSerie, setEditingSerie] = useState(null)
   const [toast, setToast] = useState(null)
-  const [theme, setTheme] = useState('dark')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('recent') // recent, name, progress
   const router = useRouter()
@@ -440,7 +439,10 @@ export default function DashboardPage() {
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${percentage(s.seen_count, s.chapter_count)}%` }} />
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: '#888', textAlign: 'center' }}>{s.seen_count || 0}/{s.chapter_count || 0} ({percentage(s.seen_count, s.chapter_count)}%)</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ fontSize: '0.8rem', color: '#888' }}>{s.seen_count || 0}/{s.chapter_count || 0} ({percentage(s.seen_count, s.chapter_count)}%)</p>
+                    {s.avg_rating && <p style={{ fontSize: '0.85rem', color: '#ffc107' }}>★ {Number(s.avg_rating).toFixed(1)}</p>}
+                  </div>
                   <button className="btn btn-secondary" style={{ width: '100%', marginTop: 10, padding: 8, fontSize: '0.85rem' }} onClick={() => setAddingSeasonTo(s.id)}>+ Temporada</button>
                 </div>
               ))}
