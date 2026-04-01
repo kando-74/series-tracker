@@ -207,6 +207,7 @@ export default function SerieDetailPage() {
   const [expandedSeason, setExpandedSeason] = useState(null)
   const [addingSeason, setAddingSeason] = useState(false)
   const [editingSeason, setEditingSeason] = useState(null)
+  const [hoveredChapter, setHoveredChapter] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [editingChapter, setEditingChapter] = useState(null)
 
@@ -383,7 +384,13 @@ export default function SerieDetailPage() {
                       </div>
 
                       {(chapters[season.id] || []).map((ch) => (
-                        <div key={ch.id} className={`chapter-item ${ch.seen ? 'seen' : 'not-seen'}`}>
+                        <div
+                          key={ch.id}
+                          className={`chapter-item ${ch.seen ? 'seen' : 'not-seen'}`}
+                          onMouseEnter={() => setHoveredChapter(ch.id)}
+                          onMouseLeave={() => setHoveredChapter(null)}
+                          style={{ position: 'relative' }}
+                        >
                           <div className="chapter-number">Cap {ch.number}</div>
                           <div className="chapter-title" style={{ cursor: 'pointer' }} onClick={() => setEditingChapter(ch)}>{ch.title || `Capítulo ${ch.number}`}</div>
                           {ch.seen && ch.rating && <div className="chapter-rating">★ {ch.rating}</div>}
@@ -406,6 +413,27 @@ export default function SerieDetailPage() {
                           <button onClick={(e) => { e.stopPropagation(); setEditingChapter(ch) }} style={{ background: 'none', border: 'none', color: '#4a9eff', cursor: 'pointer', marginLeft: 5 }} title="Editar">✎</button>
                           <button onClick={(e) => handleDeleteChapter(e, ch.id)} style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', marginLeft: 5 }}>×</button>
                         </div>
+                        {hoveredChapter === ch.id && (ch.seen || ch.rating || ch.comments) && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 6,
+                            padding: 10,
+                            zIndex: 10,
+                            fontSize: '0.8rem',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                            marginTop: 4
+                          }}>
+                            {ch.rating && <p style={{ color: '#ffc107', marginBottom: 4 }}>★ {ch.rating}/10</p>}
+                            {ch.seen_date && <p style={{ color: '#888', marginBottom: 4 }}>📅 {ch.seen_date}</p>}
+                            {ch.comments && <p style={{ color: '#aaa', fontStyle: 'italic' }}>"{ch.comments.substring(0, 60)}{ch.comments.length > 60 ? '...' : ''}"</p>}
+                            {!ch.seen && !ch.rating && !ch.comments && <p style={{ color: '#888' }}>Sin calificar</p>}
+                          </div>
+                        )}
                       ))}
 
                       {(chapters[season.id] || []).length === 0 && (
