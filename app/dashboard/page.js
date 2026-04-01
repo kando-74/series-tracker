@@ -191,6 +191,9 @@ function AddSerieModal({ onClose, onAdd }) {
   const [showCoverSearch, setShowCoverSearch] = useState(false)
   const [showManualUrl, setShowManualUrl] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [tvmazeResults, setTvmazeResults] = useState([])
+  const [tvmazeLoading, setTvmazeLoading] = useState(false)
+  const [importing, setImporting] = useState(false)
   
   const handleSubmit = async (e) => {
     e?.preventDefault()
@@ -206,6 +209,59 @@ function AddSerieModal({ onClose, onAdd }) {
     } finally { setLoading(false) }
   }
   
+  const searchTVMaze = async (query) => {
+    if (query.length < 2) return
+    setTvmazeLoading(true)
+    try {
+      const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      setTvmazeResults(data.slice(0, 6))
+    } catch { setTvmazeResults([]) }
+    finally { setTvmazeLoading(false) }
+  }
+  
+  const importFromTVMaze = async (show) => {
+    setImporting(true)
+    try {
+      const res = await fetch('/api/series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: show.show.name, image_url: show.show.image?.medium || null })
+      })
+      const data = await res.json()
+      const seriesId = data.series?.id
+      if (!seriesId) throw new Error('Failed')
+      
+      const seasonsRes = await fetch(`https://api.tvmaze.com/shows/${show.show.id}/seasons`)
+      const seasons = await seasonsRes.json()
+      
+      for (const season of seasons) {
+        const seasonRes = await fetch('/api/seasons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ series_id: seriesId, number: season.number, title: season.name || null })
+        })
+        const sData = await seasonRes.json()
+        const seasonId = sData.season?.id
+        if (!seasonId) continue
+        
+        const epsRes = await fetch(`https://api.tvmaze.com/seasons/${season.id}/episodes`)
+        const episodes = await epsRes.json()
+        
+        for (const ep of episodes) {
+          await fetch('/api/chapters', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ season_id: seasonId, number: ep.number, title: ep.name || null })
+          })
+        }
+      }
+      onAdd()
+      onClose()
+    } catch (err) { console.error(err); alert('Error al importar') }
+    finally { setImporting(false) }
+  }
+  
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -213,7 +269,32 @@ function AddSerieModal({ onClose, onAdd }) {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Título de la serie</label>
-            <input type="text" value={title} onChange={e => { setTitle(e.target.value); setImageUrl('') }} placeholder="Ej: Breaking Bad" required autoFocus />
+            <input type="text" value={title} onChange={e => { setTitle(e.target.value); setImageUrl(''); setTvmazeResults([]) }} placeholder="Escribe para buscar en TVMaze..." required autoFocus />
+          </div>
+          
+          {title.length >= 2 && (
+            <button type="button" onClick={() => searchTVMaze(title)} disabled={tvmazeLoading} style={{ width: '100%', padding: 10, marginBottom: 10, background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, cursor: tvmazeLoading ? 'not-allowed' : 'pointer', opacity: tvmazeLoading ? 0.7 : 1 }}>
+              {tvmazeLoading ? 'Buscando...' : '🔍 Buscar en TVMaze (importar todo)'}
+            </button>
+          )}
+          
+          {tvmazeResults.length > 0 && (
+            <div style={{ marginBottom: 15, maxHeight: 280, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+              {tvmazeResults.map(r => (
+                <div key={r.show.id} onClick={() => importFromTVMaze(r)} style={{ display: 'flex', gap: 10, padding: 10, cursor: 'pointer', borderBottom: '1px solid var(--border)', alignItems: 'center', background: importing ? 'var(--bg-tertiary)' : 'none' }} onMouseEnter={e => { if (!importing) e.currentTarget.style.background = 'var(--bg-tertiary)' }} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                  {r.show.image?.medium ? <img src={r.show.image.medium} alt="" style={{ width: 45, height: 68, objectFit: 'cover', borderRadius: 4 }} /> : <div style={{ width: 45, height: 68, background: '#333', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>🎬</div>}
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '0.9rem' }}>{r.show.name}</p>
+                    <p style={{ color: '#888', fontSize: '0.75rem' }}>{r.show.premiered?.split('-')[0] || '?'} · {r.show.genres?.slice(0,2).join(', ') || 'Sin género'}</p>
+                    <p style={{ color: '#4caf50', fontSize: '0.75rem' }}>📥 Importar con temporadas y capítulos</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div style={{ borderTop: '1px solid var(--border)', margin: '12px 0', paddingTop: 12 }}>
+            <p style={{ color: '#888', fontSize: '0.8rem', textAlign: 'center', marginBottom: 8 }}>— o añadir serie vacía —</p>
           </div>
           
           <button type="button" onClick={() => title.length >= 2 && setShowCoverSearch(true)} disabled={title.length < 2} style={{ width: '100%', padding: 12, marginBottom: 15, background: title.length >= 2 ? '#6366f1' : '#333', color: '#fff', border: 'none', borderRadius: 8, cursor: title.length >= 2 ? 'pointer' : 'not-allowed', fontSize: '0.95rem' }}>
