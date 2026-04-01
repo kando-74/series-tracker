@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -26,14 +26,20 @@ function Toast({ message, type, onClose }) {
 function SearchCoversModal({ title, onSelect, onClose }) {
   const [covers, setCovers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searched, setSearched] = useState(false)
   
   useEffect(() => {
     async function search() {
-      if (!title || title.length < 2) { setLoading(false); return }
+      if (!title || title.length < 2) {
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      setSearched(true)
       try {
         const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(title)}`)
         const data = await res.json()
-        setCovers(data.slice(0, 6).map(item => ({
+        setCovers(data.slice(0, 8).map(item => ({
           id: item.show.id,
           title: item.show.name,
           image: item.show.image?.medium || null,
@@ -45,27 +51,34 @@ function SearchCoversModal({ title, onSelect, onClose }) {
         setLoading(false)
       }
     }
-    const timer = setTimeout(search, 400)
-    return () => clearTimeout(timer)
+    search()
   }, [title])
   
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
+      <div className="modal" style={{ maxWidth: 650, maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
         <h2>Buscar portada para "{title}"</h2>
+        
         {loading ? (
-          <p style={{ textAlign: 'center', color: '#888' }}>Buscando...</p>
-        ) : covers.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#888' }}>No se encontraron portadas</p>
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <div style={{ fontSize: '2rem', animation: 'spin 1s linear infinite' }}>🔍</div>
+            <p style={{ marginTop: 10, color: '#888' }}>Buscando en TVMaze...</p>
+          </div>
+        ) : searched && covers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>
+            <p>No se encontraron portadas para "{title}"</p>
+            <p style={{ fontSize: '0.85rem', marginTop: 10 }}>Puedes añadir una URL manualmente después</p>
+          </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 15 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 15 }}>
             {covers.map(c => (
               <div
                 key={c.id}
                 onClick={() => onSelect(c.image)}
                 style={{
                   cursor: 'pointer', borderRadius: 8, overflow: 'hidden',
-                  border: '2px solid transparent', transition: 'border-color 0.2s'
+                  border: '3px solid transparent', transition: 'all 0.2s',
+                  background: '#222'
                 }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = '#4a9eff'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
@@ -77,15 +90,21 @@ function SearchCoversModal({ title, onSelect, onClose }) {
                     🎬
                   </div>
                 )}
-                <p style={{ fontSize: '0.75rem', color: '#aaa', textAlign: 'center', padding: '5px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p style={{ fontSize: '0.7rem', color: '#aaa', textAlign: 'center', padding: '5px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.title} {c.year && `(${c.year})`}
                 </p>
               </div>
             ))}
           </div>
         )}
-        <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+          <span style={{ fontSize: '0.8rem', color: '#666' }}>
+            {covers.length > 0 ? `${covers.length} portadas encontradas` : ''}
+          </span>
+          <div className="modal-actions" style={{ marginTop: 0 }}>
+            <button className="btn btn-secondary" onClick={onClose}>Cerrar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -95,12 +114,13 @@ function SearchCoversModal({ title, onSelect, onClose }) {
 function AddSerieModal({ onClose, onAdd }) {
   const [title, setTitle] = useState('')
   const [imageUrl, setImageUrl] = useState('')
-  const [manualUrl, setManualUrl] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [showCoverSearch, setShowCoverSearch] = useState(false)
+  const [showManualUrl, setShowManualUrl] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef(null)
   
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     if (!title.trim()) return
     setLoading(true)
     try {
@@ -118,63 +138,88 @@ function AddSerieModal({ onClose, onAdd }) {
     }
   }
   
-  const handleTitleBlur = () => {
-    if (title.length >= 3 && !imageUrl) {
+  const handleSearchCovers = () => {
+    if (title.length >= 2) {
       setShowCoverSearch(true)
     }
-  }
-  
-  const handleCoverSelect = (url) => {
-    setImageUrl(url)
-    setShowCoverSearch(false)
   }
   
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h2>Nueva Serie</h2>
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Título de la serie</label>
             <input
+              ref={inputRef}
               type="text"
               value={title}
-              onChange={e => { setTitle(e.target.value); setImageUrl(''); setManualUrl(false) }}
-              onBlur={handleTitleBlur}
-              placeholder="Escribe el nombre y espera..."
+              onChange={e => { setTitle(e.target.value); setImageUrl('') }}
+              placeholder="Ej: Breaking Bad"
               required
               autoFocus
             />
           </div>
           
+          {/* Botón para buscar portadas */}
+          <button
+            type="button"
+            onClick={handleSearchCovers}
+            disabled={title.length < 2}
+            style={{
+              width: '100%', padding: 12, marginBottom: 15,
+              background: title.length >= 2 ? '#6366f1' : '#333',
+              color: '#fff', border: 'none', borderRadius: 8,
+              cursor: title.length >= 2 ? 'pointer' : 'not-allowed',
+              fontSize: '0.95rem', transition: 'background 0.2s'
+            }}
+          >
+            🔍 Buscar portadas en TVMaze
+          </button>
+          
           {imageUrl && (
             <div style={{ marginBottom: 15, textAlign: 'center' }}>
-              <img src={imageUrl} alt="cover" style={{ maxWidth: 120, maxHeight: 180, borderRadius: 8, objectFit: 'cover' }} />
-              <p style={{ fontSize: '0.8rem', color: '#888', marginTop: 5 }}>Portada seleccionada</p>
+              <p style={{ fontSize: '0.8rem', color: '#4caf50', marginBottom: 8 }}>✓ Portada seleccionada</p>
+              <img src={imageUrl} alt="cover" style={{ maxWidth: 100, maxHeight: 150, borderRadius: 8, objectFit: 'cover', border: '2px solid #4caf50' }} />
+              <button
+                type="button"
+                onClick={() => setImageUrl('')}
+                style={{ display: 'block', margin: '8px auto 0', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                ✕ Quitar portada
+              </button>
             </div>
           )}
           
-          <div className="form-group">
-            <label
-              onClick={() => setManualUrl(!manualUrl)}
-              style={{ cursor: 'pointer', color: '#4a9eff', fontSize: '0.85rem' }}
-            >
-              {manualUrl ? '▲ Ocultar URL manual' : '▼ ¿Añadir URL de imagen manualmente?'}
-            </label>
-            {manualUrl && (
+          {/* Toggle para URL manual */}
+          <button
+            type="button"
+            onClick={() => setShowManualUrl(!showManualUrl)}
+            style={{
+              background: 'none', border: 'none', color: '#4a9eff',
+              cursor: 'pointer', fontSize: '0.85rem', marginBottom: 10
+            }}
+          >
+            {showManualUrl ? '▲ Ocultar' : '▼ ¿Añadir URL de imagen manualmente?'}
+          </button>
+          
+          {showManualUrl && (
+            <div className="form-group" style={{ marginTop: 5 }}>
               <input
                 type="url"
                 value={imageUrl}
                 onChange={e => setImageUrl(e.target.value)}
-                placeholder="https://..."
+                placeholder="https://ejemplo.com/imagen.jpg"
               />
-            )}
-          </div>
+            </div>
+          )}
           
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
             <button type="submit" className="btn" disabled={loading || !title.trim()}>
-              {loading ? 'Añadiendo...' : 'Añadir Serie'}
+              {loading ? 'Añadiendo...' : '✓ Añadir Serie'}
             </button>
           </div>
         </form>
@@ -183,7 +228,7 @@ function AddSerieModal({ onClose, onAdd }) {
       {showCoverSearch && (
         <SearchCoversModal
           title={title}
-          onSelect={handleCoverSelect}
+          onSelect={(url) => { setImageUrl(url); setShowCoverSearch(false) }}
           onClose={() => setShowCoverSearch(false)}
         />
       )}
@@ -273,7 +318,10 @@ export default function DashboardPage() {
   
   return (
     <div>
-      <style>{`@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+      <style>{`
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
       
       <nav className="navbar">
         <h1>Series Tracker</h1>
