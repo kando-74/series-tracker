@@ -16,7 +16,6 @@ function AddSeasonModal({ onClose, onAdd }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ series_id: null, number: parseInt(number), title: title || null })
       })
-      // Note: series_id set later via context
       if (res.ok) { onAdd(); onClose() }
     } finally { setLoading(false) }
   }
@@ -37,6 +36,47 @@ function AddSeasonModal({ onClose, onAdd }) {
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
             <button type="submit" className="btn" disabled={loading}>{loading ? 'Añadiendo...' : 'Añadir'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EditSeasonModal({ season, onClose, onSave }) {
+  const [number, setNumber] = useState(season.number)
+  const [title, setTitle] = useState(season.title || '')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch('/api/seasons', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: season.id, number: parseInt(number), title: title || null })
+      })
+      if (res.ok) { onSave(); onClose() }
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Editar Temporada</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Número de temporada</label>
+            <input type="number" value={number} onChange={(e) => setNumber(e.target.value)} min="1" required autoFocus />
+          </div>
+          <div className="form-group">
+            <label>Título (opcional)</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej: Temporada Final" />
+          </div>
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn" disabled={loading}>{loading ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
       </div>
@@ -166,6 +206,7 @@ export default function SerieDetailPage() {
   const [loading, setLoading] = useState(true)
   const [expandedSeason, setExpandedSeason] = useState(null)
   const [addingSeason, setAddingSeason] = useState(false)
+  const [editingSeason, setEditingSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [editingChapter, setEditingChapter] = useState(null)
 
@@ -286,7 +327,16 @@ export default function SerieDetailPage() {
                     onClick={() => setExpandedSeason(expandedSeason === season.id ? null : season.id)}
                   >
                     <div>
-                      <h4>Temporada {season.number}{season.title ? `: ${season.title}` : ''}</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <h4 style={{ margin: 0 }}>Temporada {season.number}</h4>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingSeason(season) }}
+                          style={{ background: 'none', border: 'none', color: '#4a9eff', cursor: 'pointer', fontSize: '0.85rem', padding: '2px 6px' }}
+                          title="Editar temporada"
+                        >
+                          ✎
+                        </button>
+                      </div>
                       <p style={{ color: '#888', fontSize: '0.85rem' }}>
                         {season.season_count || 0} capítulos · {season.seen_count || 0} vistos
                         {season.avg_rating ? ` · ★ ${Number(season.avg_rating).toFixed(1)}` : ''}
@@ -321,12 +371,13 @@ export default function SerieDetailPage() {
                       </div>
 
                       {(chapters[season.id] || []).map((ch) => (
-                        <div key={ch.id} className={`chapter-item ${ch.seen ? 'seen' : 'not-seen'}`} onClick={() => setEditingChapter(ch)}>
+                        <div key={ch.id} className={`chapter-item ${ch.seen ? 'seen' : 'not-seen'}`}>
                           <div className="chapter-number">Cap {ch.number}</div>
-                          <div className="chapter-title">{ch.title || `Capítulo ${ch.number}`}</div>
+                          <div className="chapter-title" style={{ cursor: 'pointer' }} onClick={() => setEditingChapter(ch)}>{ch.title || `Capítulo ${ch.number}`}</div>
                           {ch.seen && ch.rating && <div className="chapter-rating">★ {ch.rating}</div>}
                           {ch.seen && <div style={{ color: '#4caf50', fontSize: '0.85rem' }}>✓</div>}
-                          <button onClick={(e) => handleDeleteChapter(e, ch.id)} style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', marginLeft: 10 }}>×</button>
+                          <button onClick={(e) => { e.stopPropagation(); setEditingChapter(ch) }} style={{ background: 'none', border: 'none', color: '#4a9eff', cursor: 'pointer', marginLeft: 5 }} title="Editar">✎</button>
+                          <button onClick={(e) => handleDeleteChapter(e, ch.id)} style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', marginLeft: 5 }}>×</button>
                         </div>
                       ))}
 
@@ -382,6 +433,14 @@ export default function SerieDetailPage() {
           chapter={editingChapter}
           onClose={() => setEditingChapter(null)}
           onSave={handleChapterSaved}
+        />
+      )}
+
+      {editingSeason && (
+        <EditSeasonModal
+          season={editingSeason}
+          onClose={() => setEditingSeason(null)}
+          onSave={() => { fetchSeasons(); if (expandedSeason) fetchChapters(expandedSeason) }}
         />
       )}
     </div>
