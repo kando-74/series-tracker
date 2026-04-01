@@ -208,6 +208,7 @@ export default function SerieDetailPage() {
   const [addingSeason, setAddingSeason] = useState(false)
   const [editingSeason, setEditingSeason] = useState(null)
   const [hoveredChapter, setHoveredChapter] = useState(null)
+  const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [editingChapter, setEditingChapter] = useState(null)
 
@@ -270,7 +271,19 @@ export default function SerieDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: ch.id, seen: newSeen, seen_date: newSeen ? new Date().toISOString().split('T')[0] : null })
     })
-    if (expandedSeason) fetchChapters(expandedSeason)
+    if (expandedSeason) {
+      fetchChapters(expandedSeason)
+      // Check if season is now complete
+      const season = seasons.find(s => s.id === expandedSeason)
+      if (season && season.season_count > 0) {
+        const newSeenCount = (chapters[expandedSeason] || []).filter(c => c.id === ch.id ? newSeen : c.seen).filter(Boolean).length
+        const totalCount = (chapters[expandedSeason] || []).length
+        if (newSeen === 1 && newSeenCount === totalCount && totalCount > 0) {
+          setCelebratedSeason(expandedSeason)
+          setTimeout(() => setCelebratedSeason(null), 3000)
+        }
+      }
+    }
     fetchSeasons()
   }
 
@@ -375,6 +388,21 @@ export default function SerieDetailPage() {
                     </div>
                   </div>
 
+                  {celebratedSeason === season.id && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #4caf50, #2196f3)',
+                      color: '#fff',
+                      padding: '12px 20px',
+                      borderRadius: 8,
+                      marginBottom: 15,
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      animation: 'fadeIn 0.3s ease',
+                      boxShadow: '0 4px 15px rgba(76, 175, 80, 0.4)'
+                    }}>
+                      🎉 ¡Temporada completada! 🎉
+                    </div>
+                  )}
                   {expandedSeason === season.id && (
                     <div style={{ marginTop: 15, borderTop: '1px solid #333', paddingTop: 15 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
