@@ -387,6 +387,16 @@ export default function DashboardPage() {
       <style>{`
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes shimmer {
+          0% { background-position: -200px 0; }
+          100% { background-position: 200px 0; }
+        }
+        .skeleton {
+          background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+          background-size: 400px 100%;
+          animation: shimmer 1.4s ease-in-out infinite;
+          border-radius: 8px;
+        }
       `}</style>
       
       <nav className="navbar">
@@ -442,7 +452,17 @@ export default function DashboardPage() {
         </div>
         
         {loading ? (
-          <div className="empty-state"><p>Cargando...</p></div>
+          <div className="series-grid">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="series-card" style={{ padding: 15 }}>
+                <div className="skeleton" style={{ width: '100%', aspectRatio: '2/3', marginBottom: 10 }} />
+                <div className="skeleton" style={{ height: 20, width: '80%', marginBottom: 8 }} />
+                <div className="skeleton" style={{ height: 14, width: '50%', marginBottom: 10 }} />
+                <div className="skeleton" style={{ height: 10, width: '100%', marginBottom: 5 }} />
+                <div className="skeleton" style={{ height: 14, width: '40%' }} />
+              </div>
+            ))}
+          </div>
         ) : filteredSeries.length === 0 ? (
           searchQuery ? (
             <div className="empty-state">
