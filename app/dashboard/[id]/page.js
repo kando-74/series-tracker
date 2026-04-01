@@ -125,6 +125,59 @@ function AddChapterModal({ seasonId, onClose, onAdd }) {
   )
 }
 
+function AddMultipleChaptersModal({ seasonId, onClose, onAdd }) {
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const start = parseInt(from)
+    const end = parseInt(to)
+    if (start > end || start < 1) return
+    
+    setLoading(true)
+    try {
+      for (let i = start; i <= end; i++) {
+        await fetch('/api/chapters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ season_id: seasonId, number: i, title: null })
+        })
+      }
+      onAdd()
+      onClose()
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Añadir Capítulos en Lote</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', gap: 15 }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>Desde</label>
+              <input type="number" value={from} onChange={e => setFrom(e.target.value)} min="1" required autoFocus />
+            </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>Hasta</label>
+              <input type="number" value={to} onChange={e => setTo(e.target.value)} min="1" required />
+            </div>
+          </div>
+          <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: 15 }}>
+            Se crearán capítulos del {from || '?'} al {to || '?'}
+          </p>
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn" disabled={loading || !from || !to}>{loading ? 'Añadiendo...' : 'Añadir lote'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function ChapterModal({ chapter, onClose, onSave }) {
   const [seen, setSeen] = useState(chapter.seen === 1)
   const [rating, setRating] = useState(chapter.rating || 0)
@@ -210,6 +263,7 @@ export default function SerieDetailPage() {
   const [hoveredChapter, setHoveredChapter] = useState(null)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
+  const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
   const [editingChapter, setEditingChapter] = useState(null)
 
   const fetchSerie = async () => {
@@ -406,9 +460,14 @@ export default function SerieDetailPage() {
                   {expandedSeason === season.id && (
                     <div style={{ marginTop: 15, borderTop: '1px solid #333', paddingTop: 15 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                        <button className="btn btn-secondary" style={{ padding: 8 }} onClick={() => setAddingChapterTo(season.id)}>
-                          + Capítulo
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                        <button className="btn btn-secondary" style={{ padding: 8, flex: 1 }} onClick={() => setAddingChapterTo(season.id)}>
+                          + 1
                         </button>
+                        <button className="btn btn-secondary" style={{ padding: 8, flex: 1 }} onClick={() => setAddingMultiChaptersTo(season.id)}>
+                          + Lote
+                        </button>
+                      </div>
                       </div>
 
                       {(chapters[season.id] || []).map((ch) => (
@@ -508,6 +567,14 @@ export default function SerieDetailPage() {
           seasonId={addingChapterTo}
           onClose={() => setAddingChapterTo(null)}
           onAdd={() => { fetchChapters(addingChapterTo); fetchSeasons() }}
+        />
+      )}
+
+      {addingMultiChaptersTo && (
+        <AddMultipleChaptersModal
+          seasonId={addingMultiChaptersTo}
+          onClose={() => setAddingMultiChaptersTo(null)}
+          onAdd={() => { fetchChapters(addingMultiChaptersTo); fetchSeasons() }}
         />
       )}
 
