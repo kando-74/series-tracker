@@ -220,6 +220,18 @@ export default function SerieDetailPage() {
     if (expandedSeason) fetchChapters(expandedSeason)
   }
 
+  const handleMarkAllSeen = async (e, seasonId) => {
+    e.stopPropagation()
+    if (!confirm('¿Marcar todos los capítulos de esta temporada como vistos?')) return
+    await fetch('/api/chapters', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ season_id: seasonId, mark_all_seen: true })
+    })
+    if (expandedSeason) fetchChapters(expandedSeason)
+    fetchSeasons()
+  }
+
   const handleDeleteSeason = async (e, seasonId) => {
     e.stopPropagation()
     if (!confirm('¿Eliminar esta temporada y sus capítulos?')) return
@@ -284,6 +296,13 @@ export default function SerieDetailPage() {
                       <div className="progress-bar" style={{ width: 100, margin: 0 }}>
                         <div className="progress-fill" style={{ width: `${percentage(season.seen_count, season.season_count)}%` }} />
                       </div>
+                      <button
+                        onClick={(e) => handleMarkAllSeen(e, season.id)}
+                        style={{ background: '#4caf50', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', padding: '4px 8px', borderRadius: 4 }}
+                        title="Marcar todos como vistos"
+                      >
+                        ✓ Ver
+                      </button>
                       <button
                         onClick={(e) => handleDeleteSeason(e, season.id)}
                         style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '1.2rem' }}

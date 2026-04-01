@@ -131,3 +131,37 @@ export async function DELETE(request) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const payload = await getUserFromCookies()
+    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    const { season_id, mark_all_seen } = await request.json()
+    
+    if (season_id && mark_all_seen) {
+      const db = getDb()
+      
+      // Verify season belongs to user
+      const season = db.prepare(`
+        SELECT se.id FROM seasons se
+        JOIN series s ON se.series_id = s.id
+        WHERE se.id = ? AND s.user_id = ?
+      `).get(season_id, payload.userId)
+      if (!season) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      
+      // Mark all chapters as seen with current date
+      const today = new Date().toISOString().split('T')[0]
+      db.prepare(`
+        UPDATE chapters SET seen = 1, seen_date = ? WHERE season_id = ?
+      `).run(today, season_id)
+      
+      return NextResponse.json({ success: true })
+    }
+    
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  } catch (error) {
+    console.error('Patch chapters error:', error)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
