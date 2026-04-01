@@ -67,7 +67,6 @@ function SearchCoversModal({ title, onSelect, onClose }) {
         ) : searched && covers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>
             <p>No se encontraron portadas para "{title}"</p>
-            <p style={{ fontSize: '0.85rem', marginTop: 10 }}>Puedes añadir una URL manualmente después</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 15 }}>
@@ -98,15 +97,129 @@ function SearchCoversModal({ title, onSelect, onClose }) {
           </div>
         )}
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
-          <span style={{ fontSize: '0.8rem', color: '#666' }}>
-            {covers.length > 0 ? `${covers.length} portadas encontradas` : ''}
-          </span>
+        <div style={{ marginTop: 20 }}>
           <div className="modal-actions" style={{ marginTop: 0 }}>
             <button className="btn btn-secondary" onClick={onClose}>Cerrar</button>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function EditSerieModal({ serie, onClose, onSave }) {
+  const [title, setTitle] = useState(serie.title)
+  const [imageUrl, setImageUrl] = useState(serie.image_url || '')
+  const [showCoverSearch, setShowCoverSearch] = useState(false)
+  const [showManualUrl, setShowManualUrl] = useState(false)
+  const [loading, setLoading] = useState(false)
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!title.trim()) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/series', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: serie.id, title: title.trim(), image_url: imageUrl || null })
+      })
+      if (res.ok) {
+        onSave()
+        onClose()
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h2>Editar Serie</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Título</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          
+          {imageUrl && (
+            <div style={{ marginBottom: 15, textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', color: '#4caf50', marginBottom: 8 }}>Portada actual:</p>
+              <img src={imageUrl} alt="cover" style={{ maxWidth: 100, maxHeight: 150, borderRadius: 8, objectFit: 'cover', border: '2px solid #4caf50' }} />
+            </div>
+          )}
+          
+          <button
+            type="button"
+            onClick={() => setShowCoverSearch(true)}
+            style={{
+              width: '100%', padding: 12, marginBottom: 15,
+              background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8,
+              cursor: 'pointer', fontSize: '0.95rem'
+            }}
+          >
+            🔍 Buscar nueva portada
+          </button>
+          
+          {imageUrl && (
+            <button
+              type="button"
+              onClick={() => setImageUrl('')}
+              style={{
+                width: '100%', padding: 10, marginBottom: 15,
+                background: '#333', color: '#e53935', border: 'none', borderRadius: 8,
+                cursor: 'pointer', fontSize: '0.9rem'
+              }}
+            >
+              ✕ Quitar portada
+            </button>
+          )}
+          
+          <button
+            type="button"
+            onClick={() => setShowManualUrl(!showManualUrl)}
+            style={{
+              background: 'none', border: 'none', color: '#4a9eff',
+              cursor: 'pointer', fontSize: '0.85rem', marginBottom: 10
+            }}
+          >
+            {showManualUrl ? '▲ Ocultar' : '▼ Añadir URL manualmente'}
+          </button>
+          
+          {showManualUrl && (
+            <div className="form-group" style={{ marginTop: 5 }}>
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={e => setImageUrl(e.target.value)}
+                placeholder="https://ejemplo.com/imagen.jpg"
+              />
+            </div>
+          )}
+          
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn" disabled={loading || !title.trim()}>
+              {loading ? 'Guardando...' : '✓ Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      {showCoverSearch && (
+        <SearchCoversModal
+          title={title}
+          onSelect={(url) => { setImageUrl(url); setShowCoverSearch(false) }}
+          onClose={() => setShowCoverSearch(false)}
+        />
+      )}
     </div>
   )
 }
@@ -117,7 +230,6 @@ function AddSerieModal({ onClose, onAdd }) {
   const [showCoverSearch, setShowCoverSearch] = useState(false)
   const [showManualUrl, setShowManualUrl] = useState(false)
   const [loading, setLoading] = useState(false)
-  const inputRef = useRef(null)
   
   const handleSubmit = async (e) => {
     e?.preventDefault()
@@ -138,12 +250,6 @@ function AddSerieModal({ onClose, onAdd }) {
     }
   }
   
-  const handleSearchCovers = () => {
-    if (title.length >= 2) {
-      setShowCoverSearch(true)
-    }
-  }
-  
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -153,7 +259,6 @@ function AddSerieModal({ onClose, onAdd }) {
           <div className="form-group">
             <label>Título de la serie</label>
             <input
-              ref={inputRef}
               type="text"
               value={title}
               onChange={e => { setTitle(e.target.value); setImageUrl('') }}
@@ -163,17 +268,16 @@ function AddSerieModal({ onClose, onAdd }) {
             />
           </div>
           
-          {/* Botón para buscar portadas */}
           <button
             type="button"
-            onClick={handleSearchCovers}
+            onClick={() => title.length >= 2 && setShowCoverSearch(true)}
             disabled={title.length < 2}
             style={{
               width: '100%', padding: 12, marginBottom: 15,
               background: title.length >= 2 ? '#6366f1' : '#333',
               color: '#fff', border: 'none', borderRadius: 8,
               cursor: title.length >= 2 ? 'pointer' : 'not-allowed',
-              fontSize: '0.95rem', transition: 'background 0.2s'
+              fontSize: '0.95rem'
             }}
           >
             🔍 Buscar portadas en TVMaze
@@ -193,7 +297,6 @@ function AddSerieModal({ onClose, onAdd }) {
             </div>
           )}
           
-          {/* Toggle para URL manual */}
           <button
             type="button"
             onClick={() => setShowManualUrl(!showManualUrl)}
@@ -282,6 +385,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showAddSerie, setShowAddSerie] = useState(false)
   const [addingSeasonTo, setAddingSeasonTo] = useState(null)
+  const [editingSerie, setEditingSerie] = useState(null)
   const [toast, setToast] = useState(null)
   const router = useRouter()
   
@@ -347,11 +451,7 @@ export default function DashboardPage() {
         ) : (
           <div className="series-grid">
             {series.map((s) => (
-              <div
-                key={s.id}
-                className="series-card"
-                onClick={() => router.push(`/dashboard/${s.id}`)}
-              >
+              <div key={s.id} className="series-card">
                 <div style={{ position: 'relative' }}>
                   {s.image_url ? (
                     <img
@@ -370,6 +470,21 @@ export default function DashboardPage() {
                       🎬
                     </div>
                   )}
+                  
+                  {/* Botón editar */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingSerie(s) }}
+                    style={{
+                      position: 'absolute', top: 5, left: 5, background: 'rgba(0,0,0,0.7)', border: 'none',
+                      color: '#4a9eff', cursor: 'pointer', fontSize: '0.9rem', width: 30, height: 30,
+                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                    title="Editar serie"
+                  >
+                    ✎
+                  </button>
+                  
+                  {/* Botón eliminar */}
                   <button
                     onClick={(e) => handleDeleteSerie(e, s.id)}
                     style={{
@@ -382,7 +497,8 @@ export default function DashboardPage() {
                     ×
                   </button>
                 </div>
-                <h4 style={{ marginBottom: 5 }}>{s.title}</h4>
+                
+                <h4 style={{ marginBottom: 5, cursor: 'pointer' }} onClick={() => router.push(`/dashboard/${s.id}`)}>{s.title}</h4>
                 <p style={{ fontSize: '0.8rem', color: '#888' }}>{s.season_count || 0} temp · {s.chapter_count || 0} caps</p>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${percentage(s.seen_count, s.chapter_count)}%` }} />
@@ -393,7 +509,7 @@ export default function DashboardPage() {
                 <button
                   className="btn btn-secondary"
                   style={{ width: '100%', marginTop: 10, padding: 8, fontSize: '0.85rem' }}
-                  onClick={(e) => { e.stopPropagation(); setAddingSeasonTo(s.id) }}
+                  onClick={() => setAddingSeasonTo(s.id)}
                 >
                   + Temporada
                 </button>
@@ -415,6 +531,14 @@ export default function DashboardPage() {
           seriesId={addingSeasonTo}
           onClose={() => setAddingSeasonTo(null)}
           onAdd={() => { fetchSeries(); showToast('Temporada añadida') }}
+        />
+      )}
+      
+      {editingSerie && (
+        <EditSerieModal
+          serie={editingSerie}
+          onClose={() => setEditingSerie(null)}
+          onSave={() => { fetchSeries(); showToast('Serie actualizada') }}
         />
       )}
       
