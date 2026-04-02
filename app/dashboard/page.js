@@ -655,7 +655,7 @@ export default function DashboardPage() {
             </p>
             <div className="series-grid">
               {filteredSeries.map((s, i) => (
-                <div key={s.id} className="series-card stagger-item hover-scale" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
+                <div key={s.id} className="series-card stagger-item hover-scale" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }} onClick={() => router.push(`/dashboard/${s.id}`)}>
                   <div style={{ position: 'relative' }}>
                     {s.image_url ? (
                       <img src={s.image_url} alt={s.title} loading="lazy" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 8, marginBottom: 10 }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
