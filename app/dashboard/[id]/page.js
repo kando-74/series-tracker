@@ -278,6 +278,8 @@ export default function SerieDetailPage() {
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [updatingCover, setUpdatingCover] = useState(false)
   const [toast, setToast] = useState(null)
+  const [trailerUrl, setTrailerUrl] = useState(null)
+  const [trailerLoading, setTrailerLoading] = useState(false)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
@@ -421,7 +423,12 @@ export default function SerieDetailPage() {
               {showDetails.premiered && <span style={{ color: '#888', fontSize: '0.85rem' }}>📅 {showDetails.premiered}{showDetails.ended ? ` - ${showDetails.ended}` : ''}</span>}
             {showDetails.country && <span style={{ color: '#888', fontSize: '0.85rem' }}>🌍 {showDetails.country}{showDetails.language ? ` · ${showDetails.language}` : ''}</span>}
               {showDetails.imdb && <a href={`https://www.imdb.com/title/${showDetails.imdb}`} target="_blank" style={{ color: '#f5c518', fontSize: '0.85rem' }}>🎬 IMDB</a>}
-              {showDetails.trailer && <a href={showDetails.trailer} target="_blank" style={{ color: '#e53935', fontSize: '0.85rem' }}>▶ Trailer</a>}
+              {showDetails.officialSite && <a href={showDetails.officialSite} target="_blank" style={{ color: '#4a9eff', fontSize: '0.85rem' }}>🌐 Web</a>}
+              {!trailerUrl && !trailerLoading && (
+                <button onClick={() => searchYouTubeTrailer(serie?.title || '')} style={{ background: '#e53935', border: 'none', color: '#fff', padding: '4px 10px', borderRadius: 4, fontSize: '0.8rem', cursor: 'pointer' }}>▶ Buscar Trailer</button>
+              )}
+              {trailerLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Buscando...</span>}
+              {trailerUrl && <a href={trailerUrl} target="_blank" style={{ color: '#e53935', fontSize: '0.85rem' }}>▶ YouTube</a>}
             </div>
           </div>
         </div>
