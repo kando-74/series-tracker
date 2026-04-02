@@ -280,6 +280,8 @@ export default function SerieDetailPage() {
   const [toast, setToast] = useState(null)
   const [trailerUrl, setTrailerUrl] = useState(null)
   const [trailerLoading, setTrailerLoading] = useState(false)
+  const [recommendations, setRecommendations] = useState([])
+  const [recsLoading, setRecsLoading] = useState(false)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
@@ -412,6 +414,14 @@ export default function SerieDetailPage() {
       {showDetails && (
         <div className="container" style={{ marginTop: 0 }}>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: 20, marginBottom: 20, border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+              <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Info de la Serie</h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={fetchRecommendations} disabled={recsLoading} style={{ background: recsLoading ? 'var(--bg-tertiary)' : '#9333ea', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: recsLoading ? 'not-allowed' : 'pointer', fontSize: '0.8rem' }}>
+                  {recsLoading ? '...' : '✨ Similares'}
+                </button>
+              </div>
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: showDetails.summary ? 15 : 0 }}>
               {showDetails.genres?.map(g => <span key={g} style={{ background: 'var(--accent)', color: '#fff', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem' }}>{g}</span>)}
               {showDetails.runtime && <span style={{ color: '#888', fontSize: '0.85rem', alignSelf: 'center' }}>{showDetails.runtime} min</span>}
@@ -431,6 +441,20 @@ export default function SerieDetailPage() {
               {trailerUrl && <a href={trailerUrl} target="_blank" style={{ color: '#e53935', fontSize: '0.85rem' }}>▶ YouTube</a>}
             </div>
           </div>
+          
+          {recommendations.length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: 10 }}>✨ Series Similares</h4>
+              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 10 }}>
+                {recommendations.map(r => (
+                  <div key={r.show.id} style={{ minWidth: 120, background: 'var(--bg-tertiary)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+                    {r.show.image?.medium ? <img src={r.show.image.medium} alt="" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 6, marginBottom: 8 }} /> : <div style={{ width: '100%', aspectRatio: '2/3', background: '#333', borderRadius: 6, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎬</div>}
+                    <p style={{ color: 'var(--text-primary)', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.show.name}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
