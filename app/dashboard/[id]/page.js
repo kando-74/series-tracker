@@ -282,6 +282,7 @@ export default function SerieDetailPage() {
   const [trailerLoading, setTrailerLoading] = useState(false)
   const [recommendations, setRecommendations] = useState([])
   const [recsLoading, setRecsLoading] = useState(false)
+  const [nextEpisode, setNextEpisode] = useState(null)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
@@ -417,8 +418,8 @@ export default function SerieDetailPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
               <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Info de la Serie</h3>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={fetchRecommendations} disabled={recsLoading} style={{ background: recsLoading ? 'var(--bg-tertiary)' : '#9333ea', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: recsLoading ? 'not-allowed' : 'pointer', fontSize: '0.8rem' }}>
-                  {recsLoading ? '...' : '✨ Similares'}
+                <button onClick={() => { fetchRecommendations(); fetchNextEpisode() }} disabled={recsLoading || nextEpisode} style={{ background: (recsLoading || nextEpisode) ? 'var(--bg-tertiary)' : '#9333ea', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: (recsLoading || nextEpisode) ? 'not-allowed' : 'pointer', fontSize: '0.8rem' }}>
+                  {recsLoading ? '...' : nextEpisode ? '✓ Info' : '✨ Info'}
                 </button>
               </div>
             </div>
@@ -442,6 +443,17 @@ export default function SerieDetailPage() {
             </div>
           </div>
           
+          {nextEpisode && (
+            <div style={{ background: 'linear-gradient(135deg, #9333ea, #4f46e5)', borderRadius: 10, padding: 15, marginBottom: 15, color: '#fff' }}>
+              <p style={{ fontSize: '0.85rem', opacity: 0.9, marginBottom: 5 }}>📺 PRÓXIMO EPISODIO</p>
+              <p style={{ fontWeight: 'bold', marginBottom: 5 }}>S{nextEpisode.season}E{nextEpisode.number}: {nextEpisode.title}</p>
+              <p style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                📅 {nextEpisode.airdate}{nextEpisode.airtime ? ` a las ${nextEpisode.airtime}` : ''}
+                {nextEpisode.url && <a href={nextEpisode.url} target="_blank" style={{ color: '#fff', marginLeft: 10 }}>Más info →</a>}
+              </p>
+            </div>
+          )}
+
           {recommendations.length > 0 && (
             <div style={{ marginTop: 20 }}>
               <h4 style={{ color: 'var(--text-primary)', marginBottom: 10 }}>✨ Series Similares</h4>
