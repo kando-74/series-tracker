@@ -2,6 +2,19 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
+function Toast({ message, type, onClose }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+  const bg = type === 'success' ? '#4caf50' : type === 'error' ? '#e53935' : '#4a9eff'
+  return (
+    <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000, background: bg, color: '#fff', padding: '12px 24px', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.3)', fontSize: '0.95rem' }}>
+      {message}
+    </div>
+  )
+}
+
 function AddSeasonModal({ onClose, onAdd }) {
   const [number, setNumber] = useState('')
   const [title, setTitle] = useState('')
@@ -263,6 +276,8 @@ export default function SerieDetailPage() {
   const [hoveredChapter, setHoveredChapter] = useState(null)
   const [showDetails, setShowDetails] = useState(null)
   const [detailsLoading, setDetailsLoading] = useState(false)
+  const [updatingCover, setUpdatingCover] = useState(false)
+  const [toast, setToast] = useState(null)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
@@ -380,9 +395,14 @@ export default function SerieDetailPage() {
           <a href="/dashboard" className="back-btn" style={{ margin: 0 }}>← Volver</a>
           <h1>{serie?.title || 'Cargando...'}</h1>
           {serie?.tvmaze_id && (
-            <button onClick={() => { if (!showDetails) fetchShowDetails(serie.tvmaze_id); else setShowDetails(null) }} style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
-              {detailsLoading ? '...' : showDetails ? '✕ Info' : 'ℹ Info'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { if (!showDetails) fetchShowDetails(serie.tvmaze_id); else setShowDetails(null) }} style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
+                {detailsLoading ? '...' : showDetails ? '✕ Info' : 'ℹ Info'}
+              </button>
+              <button onClick={updateCoverFromTVMaze} disabled={updatingCover} style={{ background: updatingCover ? 'var(--bg-tertiary)' : '#6366f1', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: updatingCover ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }}>
+                {updatingCover ? '...' : '🔄'}
+              </button>
+            </div>
           )}
         </div>
       </nav>
