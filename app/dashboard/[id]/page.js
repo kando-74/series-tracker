@@ -283,6 +283,8 @@ export default function SerieDetailPage() {
   const [recommendations, setRecommendations] = useState([])
   const [recsLoading, setRecsLoading] = useState(false)
   const [nextEpisode, setNextEpisode] = useState(null)
+  const [cast, setCast] = useState([])
+  const [castLoading, setCastLoading] = useState(false)
   const [celebratedSeason, setCelebratedSeason] = useState(null)
   const [addingChapterTo, setAddingChapterTo] = useState(null)
   const [addingMultiChaptersTo, setAddingMultiChaptersTo] = useState(null)
@@ -418,7 +420,7 @@ export default function SerieDetailPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
               <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Info de la Serie</h3>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => { fetchRecommendations(); fetchNextEpisode() }} disabled={recsLoading || nextEpisode} style={{ background: (recsLoading || nextEpisode) ? 'var(--bg-tertiary)' : '#9333ea', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: (recsLoading || nextEpisode) ? 'not-allowed' : 'pointer', fontSize: '0.8rem' }}>
+                <button onClick={() => { fetchRecommendations(); fetchNextEpisode(); fetchCast() }} disabled={recsLoading || nextEpisode || cast.length > 0} style={{ background: (recsLoading || nextEpisode || cast.length > 0) ? 'var(--bg-tertiary)' : '#9333ea', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: (recsLoading || nextEpisode) ? 'not-allowed' : 'pointer', fontSize: '0.8rem' }}>
                   {recsLoading ? '...' : nextEpisode ? '✓ Info' : '✨ Info'}
                 </button>
               </div>
@@ -451,6 +453,25 @@ export default function SerieDetailPage() {
                 📅 {nextEpisode.airdate}{nextEpisode.airtime ? ` a las ${nextEpisode.airtime}` : ''}
                 {nextEpisode.url && <a href={nextEpisode.url} target="_blank" style={{ color: '#fff', marginLeft: 10 }}>Más info →</a>}
               </p>
+            </div>
+          )}
+
+          {cast.length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: 10 }}>🎭 Reparto</h4>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10 }}>
+                {cast.map((person, i) => (
+                  <div key={i} style={{ minWidth: 80, textAlign: 'center' }}>
+                    {person.person.image?.medium ? (
+                      <img src={person.person.image.medium} alt={person.person.name} style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'cover', marginBottom: 6, border: '2px solid var(--border)' }} />
+                    ) : (
+                      <div style={{ width: 70, height: 70, borderRadius: '50%', background: '#333', margin: '0 auto 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>👤</div>
+                    )}
+                    <p style={{ color: 'var(--text-primary)', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{person.person.name}</p>
+                    {person.character?.name && <p style={{ color: '#888', fontSize: '0.7rem' }}>{person.character.name}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
