@@ -394,10 +394,12 @@ export default function SerieDetailPage() {
               {showDetails.genres?.map(g => <span key={g} style={{ background: 'var(--accent)', color: '#fff', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem' }}>{g}</span>)}
               {showDetails.runtime && <span style={{ color: '#888', fontSize: '0.85rem', alignSelf: 'center' }}>{showDetails.runtime} min</span>}
               <span style={{ color: showDetails.status === 'Ended' ? '#e53935' : '#4caf50', fontSize: '0.85rem', alignSelf: 'center' }}>{showDetails.status}</span>
+              {showDetails.network && <span style={{ color: '#888', fontSize: '0.85rem', alignSelf: 'center' }}>📺 {showDetails.network}</span>}
             </div>
             {showDetails.summary && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>{showDetails.summary}</p>}
             <div style={{ display: 'flex', gap: 15, marginTop: 15, flexWrap: 'wrap' }}>
               {showDetails.premiered && <span style={{ color: '#888', fontSize: '0.85rem' }}>📅 {showDetails.premiered}{showDetails.ended ? ` - ${showDetails.ended}` : ''}</span>}
+            {showDetails.country && <span style={{ color: '#888', fontSize: '0.85rem' }}>🌍 {showDetails.country}{showDetails.language ? ` · ${showDetails.language}` : ''}</span>}
               {showDetails.imdb && <a href={`https://www.imdb.com/title/${showDetails.imdb}`} target="_blank" style={{ color: '#f5c518', fontSize: '0.85rem' }}>🎬 IMDB</a>}
               {showDetails.trailer && <a href={showDetails.trailer} target="_blank" style={{ color: '#e53935', fontSize: '0.85rem' }}>▶ Trailer</a>}
             </div>
