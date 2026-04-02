@@ -540,6 +540,7 @@ export default function DashboardPage() {
       <nav className="navbar">
         <h1>Series Tracker</h1>
         <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Link href="/explore" style={{ color: '#9333ea', textDecoration: 'none', marginRight: 15 }}>✨ Explorar</Link>
           <Link href="/history" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 15 }}>Historial</Link>
           <Link href="/calendar" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 15 }}>Calendario</Link>
           <Link href="/stats" style={{ color: '#4a9eff', textDecoration: 'none', marginRight: 15 }}>Estadísticas</Link>
