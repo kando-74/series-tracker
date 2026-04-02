@@ -268,7 +268,7 @@ function AddSerieModal({ onClose, onAdd }) {
       })
       const data = await res.json()
       const seriesId = data.series?.id
-      if (!seriesId) throw new Error('Failed')
+      if (!seriesId) throw new Error('Failed to create series')
       
       const seasonsRes = await fetch(`https://api.tvmaze.com/shows/${show.show.id}/seasons`)
       const seasons = await seasonsRes.json()
@@ -283,20 +283,25 @@ function AddSerieModal({ onClose, onAdd }) {
         const seasonId = sData.season?.id
         if (!seasonId) continue
         
-        const epsRes = await fetch(`https://api.tvmaze.com/seasons/${season.id}/episodes`)
-        const episodes = await epsRes.json()
+        const fullEpsRes = await fetch(`https://api.tvmaze.com/seasons/${season.id}/episodes`)
+        const episodes = await fullEpsRes.json()
         
-        for (const ep of episodes) {
-          await fetch('/api/chapters', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ season_id: seasonId, number: ep.number, title: ep.name || null })
-          })
+        if (Array.isArray(episodes)) {
+          // Create all chapters in parallel
+          const chapterPromises = episodes
+            .filter(ep => ep.number != null)
+            .map(ep => fetch('/api/chapters', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ season_id: seasonId, number: ep.number, title: ep.name || null })
+            }))
+          await Promise.allSettled(chapterPromises)
         }
       }
+      
       onAdd()
       onClose()
-    } catch (err) { console.error(err); alert('Error al importar') }
+    } catch (err) { console.error(err); alert('Error al importar. Intenta de nuevo.') }
     finally { setImporting(false) }
   }
   
