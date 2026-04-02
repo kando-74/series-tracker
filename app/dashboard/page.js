@@ -59,6 +59,23 @@ function SearchCoversModal({ title, onSelect, onClose }) {
       <div className="modal" style={{ maxWidth: 650, maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
         <h2>Buscar portada para "{title}"</h2>
         
+        {newEpisodesAlert.length > 0 && (
+          <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8, padding: 15, marginBottom: 20 }}>
+            <p style={{ fontWeight: 'bold', color: '#92400e', marginBottom: 10 }}>🔔 Series con nuevas temporadas detectadas:</p>
+            {newEpisodesAlert.map(a => (
+              <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div>
+                  <span style={{ color: '#78350f', fontWeight: 'bold' }}>{a.title}</span>
+                  <span style={{ color: '#92400e', fontSize: '0.85rem', marginLeft: 10 }}>T{a.local} → T{a.remote}</span>
+                </div>
+                <button onClick={() => importSeasonsFromTVMaze(a.tvmaze_id, a.id, a.title)} style={{ background: '#f59e0b', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
+                  📥 Importar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: '2rem', animation: 'spin 1s linear infinite' }}>🔍</div>
@@ -209,6 +226,27 @@ function AddSerieModal({ onClose, onAdd }) {
     } finally { setLoading(false) }
   }
   
+  const importSeasonsFromTVMaze = async (tvmazeId, seriesId, title) => {
+    setLoading(true)
+    try {
+      const res = await fetch(`https://api.tvmaze.com/shows/${tvmazeId}/seasons`)
+      const seasons = await res.json()
+      
+      for (const season of seasons) {
+        await fetch('/api/seasons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ series_id: seriesId, number: season.number, title: season.name || null })
+        })
+      }
+      
+      fetchSeries()
+      setNewEpisodesAlert([])
+      showToast(`Temporadas importadas para "${title}"`)
+    } catch { showToast('Error al importar', 'error') }
+    finally { setLoading(false) }
+  }
+
   const searchTVMaze = async (query) => {
     if (query.length < 2) return
     setTvmazeLoading(true)
@@ -384,6 +422,7 @@ export default function DashboardPage() {
   const [editingSerieTitle, setEditingSerieTitle] = useState(null)
   const [toast, setToast] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [newEpisodesAlert, setNewEpisodesAlert] = useState([])
   const [sortBy, setSortBy] = useState('recent') // recent, name, progress
   const [filterStatus, setFilterStatus] = useState('all') // all, watching, completed, pending
   const router = useRouter()
@@ -398,6 +437,24 @@ export default function DashboardPage() {
       setSeries(data.series || [])
     } catch { console.error('Error fetching series') }
     finally { setLoading(false) }
+  }
+  
+  const checkForNewEpisodes = async () => {
+    const seriesWithTVMaze = series.filter(s => s.tvmaze_id)
+    const alerts = []
+    for (const s of seriesWithTVMaze) {
+      try {
+        const res = await fetch(`https://api.tvmaze.com/shows/${s.tvmaze_id}/seasons`)
+        const seasons = await res.json()
+        if (s.season_count !== seasons.length) {
+          alerts.push({ id: s.id, title: s.title, local: s.season_count, remote: seasons.length, tvmaze_id: s.tvmaze_id })
+        }
+      } catch { /* ignore */ }
+    }
+    if (alerts.length > 0) {
+      setNewEpisodesAlert(alerts)
+      showToast(`${alerts.length} serie(s) con nuevas temporadas`)
+    }
   }
   
   useEffect(() => {
@@ -496,8 +553,18 @@ export default function DashboardPage() {
       
       <div className="container">
         <div className="list-header">
-          <h2>Mis Series</h2>
-          <button className="btn" onClick={() => setShowAddSerie(true)}>+ Nueva Serie</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h2>Mis Series</h2>
+            {newEpisodesAlert.length > 0 && (
+              <span style={{ background: '#e53935', color: '#fff', padding: '4px 10px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 'bold' }}>
+                {newEpisodesAlert.length} nueva(s)
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-secondary" onClick={checkForNewEpisodes} style={{ padding: '8px 16px' }}>🔄</button>
+            <button className="btn" onClick={() => setShowAddSerie(true)}>+ Nueva Serie</button>
+          </div>
         </div>
         
         {/* Search and Sort Bar */}
@@ -533,6 +600,23 @@ export default function DashboardPage() {
           </select>
         </div>
         
+        {newEpisodesAlert.length > 0 && (
+          <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8, padding: 15, marginBottom: 20 }}>
+            <p style={{ fontWeight: 'bold', color: '#92400e', marginBottom: 10 }}>🔔 Series con nuevas temporadas detectadas:</p>
+            {newEpisodesAlert.map(a => (
+              <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div>
+                  <span style={{ color: '#78350f', fontWeight: 'bold' }}>{a.title}</span>
+                  <span style={{ color: '#92400e', fontSize: '0.85rem', marginLeft: 10 }}>T{a.local} → T{a.remote}</span>
+                </div>
+                <button onClick={() => importSeasonsFromTVMaze(a.tvmaze_id, a.id, a.title)} style={{ background: '#f59e0b', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
+                  📥 Importar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {loading ? (
           <div className="series-grid">
             {[1,2,3,4,5,6].map(i => (
