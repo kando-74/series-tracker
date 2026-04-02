@@ -347,7 +347,7 @@ export default function SerieDetailPage() {
     await fetch('/api/chapters', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ch.id, seen: newSeen, seen_date: newSeen ? new Date().toISOString().split('T')[0] : null })
+      body: JSON.stringify({ id: ch.id, seen: newSeen, seen_date: newSeen ? new Date().toLocaleDateString('en-CA') : null })
     })
     if (expandedSeason) {
       fetchChapters(expandedSeason)

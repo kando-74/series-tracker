@@ -151,7 +151,7 @@ export async function PATCH(request) {
       if (!season) return NextResponse.json({ error: 'Not found' }, { status: 404 })
       
       // Mark all chapters as seen with current date
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toLocaleDateString('en-CA')
       db.prepare(`
         UPDATE chapters SET seen = 1, seen_date = ? WHERE season_id = ?
       `).run(today, season_id)
